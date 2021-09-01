@@ -3,8 +3,13 @@ package org.wso2.custom.user.operation.notification.listener.Internal;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceRegistration;
 import org.osgi.service.component.ComponentContext;
 import org.osgi.service.component.annotations.*;
+import org.wso2.carbon.identity.mgt.IdentityMgtEventListener;
+import org.wso2.carbon.identity.mgt.listener.TenantManagementListener;
+import org.wso2.carbon.identity.mgt.listener.UserSessionTerminationListener;
+import org.wso2.carbon.stratos.common.listeners.TenantMgtListener;
 import org.wso2.carbon.user.core.listener.UserOperationEventListener;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.custom.user.operation.notification.listener.CustomUserOperationNotificationListener;
@@ -23,6 +28,33 @@ public class CustomUserOperationNotificationListenerServiceComponent {
         BundleContext bundleContext = context.getBundleContext();
         bundleContext.registerService(UserOperationEventListener.class.getName(), new CustomUserOperationNotificationListener(), null);
         log.info("CustomUserOperationNotificationListener bundle activated successfully.");
+
+        ServiceRegistration serviceRegistration = context.getBundleContext().registerService
+                (UserOperationEventListener.class.getName(), new IdentityMgtEventListener(), null);
+        if (serviceRegistration != null) {
+            if (log.isDebugEnabled()) {
+                log.debug("Identity Management - UserOperationEventListener registered.");
+            }
+        } else {
+            log.error("Identity Management - UserOperationEventListener could not be registered.");
+        }
+
+        CustomUserOperationNotificationListener notificationListener =
+                new CustomUserOperationNotificationListener();
+        ServiceRegistration customUserOperationNotificationSR = context.getBundleContext().registerService(
+                UserOperationEventListener.class.getName(), notificationListener, null);
+        context.getBundleContext().registerService(TenantMgtListener.class.getName(), new TenantManagementListener()
+                , null);
+        context.getBundleContext().registerService(UserOperationEventListener.class.getName(),
+                new UserSessionTerminationListener(), null);
+
+        if (customUserOperationNotificationSR != null) {
+            if (log.isDebugEnabled()) {
+                log.debug("Identity Management - CustomUserOperationNotificationListener registered.");
+            }
+        } else {
+            log.error("Identity Management - CustomUserOperationNotificationListener could not be registered.");
+        }
     }
 
     @Deactivate
